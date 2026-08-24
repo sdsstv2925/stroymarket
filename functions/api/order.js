@@ -1,12 +1,20 @@
 export async function onRequestPost(context) {
-  const data = await context.request.json();
-  const text = `🔥 Новый заказ! Товар: ${data.product} Город: ${data.city} Клиент: ${data.name} ${data.phone} Кол-во: ${data.qty}`;
-  if (context.env.TELEGRAM_BOT_TOKEN) {
-    await fetch(`https://api.telegram.org/bot${context.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: context.env.TELEGRAM_CHAT_ID, text: text })
-    });
+  const { request, env } = context;
+  try {
+    const data = await request.json();
+    const { name, phone, qty, product, city, channel } = data;
+    const time = new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
+    const text = `🔥 Новый заказ!\n\n📦 Товар: ${product}\n🏙 Город: ${city}\n👤 Клиент: ${name}\n📞 Телефон: ${phone}\n🔢 Кол-во: ${qty}\n💬 Канал ответа: ${channel}\n⏰ Время: ${time}`;
+
+    if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
+      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: text })
+      });
+    }
+    return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500 });
   }
-  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
 }
