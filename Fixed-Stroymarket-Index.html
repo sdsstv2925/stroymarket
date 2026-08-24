@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Строй.Маркет - Быстрый заказ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>*{font-family:Inter,system-ui,sans-serif}</style>
+</head>
+<body class="bg-[#f2f3f5] min-h-screen flex items-center justify-center p-4">
+<div id="app" class="w-full max-w-[440px] bg-white rounded-[28px] shadow-[0_24px_64px_-16px_rgba(0,0,0,0.18)] overflow-hidden">
+  <div class="px-7 pt-7 pb-5">
+    <div class="flex justify-between">
+      <h1 class="text-[26px] font-extrabold">Быстрый заказ</h1>
+      <button onclick="location.reload()" class="w-8 h-8 rounded-full bg-zinc-100">×</button>
+    </div>
+    <p class="mt-2 text-[13px] text-zinc-500">Заявка уйдет в 3 ближайших магазина с лучшей ценой. Ответят в MAX за ~7 минут.</p>
+    <div class="mt-6 rounded-2xl bg-[#f7f7f8] border px-4 py-3 flex justify-between items-center">
+      <div><div class="text-[11px] uppercase text-zinc-400">Выбранный магазин</div><div class="font-semibold text-[14px]">ЮгСтрой 3 • 390₽</div></div>
+      <button id="extraBtn" class="text-[13px] border bg-white px-3 py-1 rounded-full">+ еще 2</button>
+    </div>
+    <div id="extra" class="hidden mt-2 space-y-2 text-[13px]">
+      <div class="border rounded-xl p-3">СтройМарт • 405₽ • 1.2км</div>
+      <div class="border rounded-xl p-3">База №1 • 412₽ • 2.4км</div>
+    </div>
+  </div>
+  <div class="px-7 pb-7 space-y-4">
+    <div><label class="text-[11px] uppercase text-zinc-400">Имя</label><input id="name" placeholder="Как к вам обращаться" class="w-full h-12 rounded-xl bg-[#f7f7f8] px-4 outline-none focus:bg-white focus:border focus:border-zinc-900"></div>
+    <div><label class="text-[11px] uppercase text-zinc-400">Телефон</label><input id="phone" placeholder="+7 900 000-00-00" class="w-full h-12 rounded-xl bg-[#f7f7f8] px-4 outline-none focus:bg-white focus:border focus:border-zinc-900"></div>
+    <div><label class="text-[11px] uppercase text-zinc-400">Количество</label><div class="flex gap-3 items-center"><input id="qty" type="number" value="10" class="w-20 h-12 rounded-xl bg-[#f7f7f8] text-center font-semibold"> <span class="text-sm text-zinc-500">мешков / листов</span></div></div>
+    <div>
+      <label class="text-[11px] uppercase text-zinc-400">Куда отправить ответ</label>
+      <div class="grid grid-cols-3 gap-2 mt-2">
+        <button data-channel="MAX" class="channel-btn border-2 rounded-xl p-3 text-left border-[#ff6b00] bg-[#fff7f0]"><div class="font-semibold text-[13px] text-[#ff6b00]">MAX</div><div class="text-[11px] text-zinc-500">7 мин</div></button>
+        <button data-channel="Telegram" class="channel-btn border-2 rounded-xl p-3 text-left border-zinc-100 bg-[#fcfcfd]"><div class="font-semibold text-[13px]">Telegram</div><div class="text-[11px] text-zinc-500">чат</div></button>
+        <button data-channel="Звонок" class="channel-btn border-2 rounded-xl p-3 text-left border-zinc-100 bg-[#fcfcfd]"><div class="font-semibold text-[13px]">Звонок</div><div class="text-[11px] text-zinc-500">сейчас</div></button>
+      </div>
+      <div class="mt-2 text-[12px] text-zinc-500">Выбрано: <span id="chosen" class="font-medium text-zinc-900">MAX — быстрее всего</span></div>
+    </div>
+    <button id="send" class="w-full h-[52px] rounded-full bg-[#ff6b00] text-white font-semibold">Отправить заявку →</button>
+    <p class="text-[11px] text-zinc-400 text-center">Нажимая, вы соглашаетесь с обработкой данных. Без спама.</p>
+  </div>
+</div>
+<script>
+let channel = 'MAX';
+const btns = document.querySelectorAll('.channel-btn');
+const chosen = document.getElementById('chosen');
+btns.forEach(b=>{
+  b.addEventListener('click', ()=>{
+    channel = b.dataset.channel;
+    btns.forEach(x=>{x.className='channel-btn border-2 rounded-xl p-3 text-left border-zinc-100 bg-[#fcfcfd]'; x.querySelector('div').classList.remove('text-[#ff6b00]')});
+    b.className='channel-btn border-2 rounded-xl p-3 text-left border-[#ff6b00] bg-[#fff7f0]';
+    b.querySelector('div').classList.add('text-[#ff6b00]');
+    chosen.textContent = channel + (channel==='MAX'?' — быстрее всего': channel==='Telegram'?' — ответим в чат':' — перезвоним сейчас');
+  });
+});
+document.getElementById('extraBtn').addEventListener('click', ()=>{document.getElementById('extra').classList.toggle('hidden')});
+document.getElementById('send').addEventListener('click', async ()=>{
+  const name = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const qty = document.getElementById('qty').value;
+  if(!name||!phone){alert('Заполни имя и телефон');return;}
+  const payload = {name, phone, qty, product:'Клей плиточный Юнис 25кг', city:'Москва', channel};
+  try{
+    const r = await fetch('/api/order',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const j = await r.json();
+    if(j.ok){document.getElementById('send').textContent='Заявка отправлена ✓'; setTimeout(()=>document.getElementById('send').textContent='Отправить заявку →',2000);}
+    else alert('Ошибка: '+j.error);
+  }catch(e){alert('Отправлено локально (нет /api/order). Канал: '+channel);}
+});
+</script>
+</body>
+</html>
